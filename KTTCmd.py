@@ -18,21 +18,24 @@ class KTTCmd:
 
         self.commandLineOpts = argp.parse_args(cmdopts)
 
-    def getTasks(self, names=[]):
-        if not names:
-            names = list(
-                filter(
-                    bool,
-                    map(
-                        lambda l: l.strip(),
-                        self.runRawCmd('tasks').stdout.split("\n"),
-                    )
+    def getTaskNames(self):
+        return list(
+            filter(
+                bool,
+                map(
+                    lambda l: l.strip(),
+                    self.runRawCmd('tasks').stdout.split("\n"),
                 )
             )
+        )
+
+    def getTasks(self, names=[]):
+        if not names:
+            names = self.getTaskNames()
 
         ts = []
         for n in names:
-            t = Task(self, name=n)
+            t = Task(self, n)
             ts.append(t)
 
         return ts
@@ -40,14 +43,16 @@ class KTTCmd:
     def execCmd(self, args=[]):
         if not args:
             args = self.commandLineOpts.arguments
-        if not args: raise Exception('no command given')
+        if not args:
+            args = ['status']
+
         cmd = args[0]
 
         if cmd in ('version',):
             self.runRawCmd('version', output=True)
         elif cmd in ('start', 'stop'):
             if len(args) != 2: raise Exception('wrong # of args')
-            t = Task(self, name=args[1])
+            t = Task(self, args[1])
             if cmd == 'start': t.start()
             elif cmd == 'stop': t.stop()
         elif cmd in ('id', 'taskid', 'getid', 'getId', 'getTaskId'):
@@ -59,6 +64,10 @@ class KTTCmd:
                 print(f'{t.name} -- {"" if t.isActive() else "not "}running')
         elif cmd in ('help',):
             self.runRawCmd(output=True)
+        elif cmd in ('raw',):
+            self.runRawCmd(*(args[1:]), output=True)
+        elif cmd in ('quit', 'exit'):
+            self.runRawCmd('quit', output=True)
         else: raise Exception('unsupported command')
 
 

@@ -1,14 +1,33 @@
 
 class Task:
-    def __init__(self, ktt, name="", ide=""):
-        if not name  and  not ide: raise Exception('either name or ide arguments must be given')
-
+    def __init__(self, ktt, nameOrId):
+        if not nameOrId: raise Exception('either name or id must be given')
         self.ktt = ktt
-        if not ide:
-            ide = self.retrieveId(name)
 
-        self.name = name
-        self.ide = ide
+        ns = ktt.getTaskNames()
+        if nameOrId in ns:
+            self.name = nameOrId
+            self.ide = self.retrieveId(self.name)
+        else:
+            self.name = None
+            self.ide = nameOrId
+            for n in ns:
+                p = ktt.runRawCmd('taskIdsFromName', n)
+                ides = list(
+                    filter(
+                        bool,
+                        map(
+                            lambda l: l.strip(),
+                            p.stdout.split("\n")
+                        )
+                    )
+                )
+                if self.ide in ides:
+                    self.name = n
+                    break
+
+            if self.name is None: raise Exception(f"`{nameOrId}' is neither a task name nor a task id")
+
 
     def isActive(self):
         ktt = self.ktt
