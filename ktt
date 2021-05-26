@@ -1,0 +1,12 @@
+#!/usr/bin/python3
+
+import sys
+import os
+from pathlib import Path
+scrPath = Path(__file__).resolve().parent
+sys.path = [str(scrPath)] + sys.path
+
+from KTTCmd import KTTCmd
+
+ktt = KTTCmd(sys.argv[1:])
+ktt.execCmd()
