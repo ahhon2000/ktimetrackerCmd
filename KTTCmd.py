@@ -61,9 +61,9 @@ class KTTCmd:
                 print(f'{t.name}: {t.ide}')
         elif cmd in ('tasks', 'status', 'st'):
             for t in self.getTasks(args[1:]):
-                hrsFld = f"{t.getTotalHours():.2f}".rjust(6)
+                hrsFld = f'{"*" if t.isActive() else ""}{t.getTotalHours():.2f}'.rjust(6)
                 print(f"""
-{t.ide} {"*" if t.isActive() else " "}{t.name:10s}  {hrsFld} h
+{t.ide}  {t.name:10s}  {hrsFld} h
 """[1:-1])
         elif cmd in ('help',):
             self.runRawCmd(output=True)
