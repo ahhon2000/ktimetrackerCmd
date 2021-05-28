@@ -56,12 +56,15 @@ class KTTCmd:
             if cmd == 'start': t.start()
             elif cmd == 'stop': t.stop()
         elif cmd in ('id', 'taskid', 'getid', 'getId', 'getTaskId'):
-            if len(args) != 2: raise Exception('wrong # of args')
-            for t in self.getTasks((args[1],)):
+            if len(args) < 2: raise Exception('wrong # of args')
+            for t in self.getTasks(args[1:]):
                 print(f'{t.name}: {t.ide}')
         elif cmd in ('tasks', 'status', 'st'):
             for t in self.getTasks(args[1:]):
-                print(f'{t.name} -- {"" if t.isActive() else "not "}running')
+                hrsFld = f"{t.getTotalHours():.2f}".rjust(6)
+                print(f"""
+{t.ide} {"*" if t.isActive() else " "}{t.name:10s}  {hrsFld} h
+"""[1:-1])
         elif cmd in ('help',):
             self.runRawCmd(output=True)
         elif cmd in ('raw',):
@@ -75,7 +78,7 @@ class KTTCmd:
         parg = QDBUS_CMD_BASE + list(parg)
         p = Pipe(parg)
         if stopOnError and p.status:
-            raise Exception(f"the command line interface returned an exit code={p.status})\n{p.stderr}")
+            raise Exception(f"the command line interface returned an exit code={p.status}\n{p.stderr}")
 
         if output:
             if re.search(r'[^\s]', p.stdout):

@@ -62,3 +62,8 @@ class Task:
     def stop(self):
         ktt = self.ktt
         p = ktt.runRawCmd('stopTimerFor', self.ide)
+
+    def getTotalHours(self):
+        ktt = self.ktt
+        p = ktt.runRawCmd('totalMinutesForTaskId', self.ide)
+        return float(p.stdout.split("\n")[0]) / 60
