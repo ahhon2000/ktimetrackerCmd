@@ -1,14 +1,35 @@
 
+import os
 import re
 import argparse
+import time
+import subprocess
+
 from EasyPipe import Pipe
 from Task import Task
 
-QDBUS_CMD_BASE = "qdbus org.kde.ktimetracker /KTimeTracker".split()
+SERVICE_NAME = "org.kde.ktimetracker"
+QDBUS_CMD_BASE = f"qdbus {SERVICE_NAME} /KTimeTracker".split()
 
 class KTTCmd:
     def __init__(self, cmdopts):
+        self._checkConnection()
         self._parseCmdOpts(cmdopts)
+
+    def _checkConnection(self):
+        for i in range(2):
+            p = Pipe(["qdbus"])
+            if p.status: raise Exception(f"the `qdbus' command exited with code={p.status}")
+            if SERVICE_NAME in p.stdout: return
+            else:
+                subprocess.Popen(['ktimetracker'],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+                )
+                time.sleep(1)
+
+
+        raise Exception(f"KTimeTracker isn't running; an attempt to start it has failed")
+
 
     def _parseCmdOpts(self, cmdopts):
         cmdopts = list(cmdopts)
