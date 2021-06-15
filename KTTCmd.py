@@ -1,5 +1,5 @@
 
-import os
+import sys, os
 import re
 import argparse
 import time
@@ -7,6 +7,7 @@ import subprocess
 
 from EasyPipe import Pipe
 from Task import Task
+from History import History
 
 SERVICE_NAME = "org.kde.ktimetracker"
 QDBUS_CMD_BASE = f"qdbus {SERVICE_NAME} /KTimeTracker".split()
@@ -22,10 +23,12 @@ class KTTCmd:
             if p.status: raise Exception(f"the `qdbus' command exited with code={p.status}")
             if p.stdout.find(SERVICE_NAME) >= 0: return
             else:
-                subprocess.Popen(['ktimetracker'],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    shell=True,
-                )
+                if not os.fork():
+                    subprocess.Popen(['ktimetracker'],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        cwd = '/tmp',
+                    )
+                    sys.exit(0)
                 time.sleep(1)
 
 
@@ -87,6 +90,9 @@ class KTTCmd:
                 print(f"""
 {t.ide}  {t.name:10s}  {hrsFld} h
 """[1:-1])
+        elif cmd in ('hist', 'history', 'rep', 'report'):
+            hi = History(self)
+            print(hi)
         elif cmd in ('help',):
             self.runRawCmd(output=True)
         elif cmd in ('raw',):
