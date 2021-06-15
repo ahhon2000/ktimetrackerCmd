@@ -20,10 +20,11 @@ class KTTCmd:
         for i in range(2):
             p = Pipe(["qdbus"])
             if p.status: raise Exception(f"the `qdbus' command exited with code={p.status}")
-            if SERVICE_NAME in p.stdout: return
+            if p.stdout.find(SERVICE_NAME) >= 0: return
             else:
                 subprocess.Popen(['ktimetracker'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    shell=True,
                 )
                 time.sleep(1)
 
