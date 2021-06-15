@@ -1,17 +1,27 @@
 import os
 import random
 from pathlib import Path
+from Date import Date
 
 class History:
-    def __init__(self, ktt):
+    def __init__(self, ktt, dFrom=None, dTo=None):
         self.ktt = ktt
+
+        if dTo and not dFrom: raise Exception(f'no dFrom')
+
+        dn = Date('now')
+        if not dFrom: dFrom = dn.midnight()
+        if not dTo: dTo = dn.midnight()
+
+        dFrom, dTo = (
+            d and (d if isinstance(d, Date) else Date(d)).toNiceTextDateOnly()
+                for d in (dFrom, dTo)
+        )
 
         pid = os.getpid()
         rnd = random.randint(1,1000000)
         f = Path(f"/tmp/.ktt.report.csv.{pid}.{rnd}")
 
-        dFrom = '2021-05-01'
-        dTo = '2021-06-15'
         typ = 1
         sep = ','
         quote = ''

@@ -91,7 +91,7 @@ class KTTCmd:
 {t.ide}  {t.name:10s}  {hrsFld} h
 """[1:-1])
         elif cmd in ('hist', 'history', 'rep', 'report'):
-            hi = History(self)
+            hi = History(self, *(args[1:]))
             print(hi)
         elif cmd in ('help',):
             self.runRawCmd(output=True)
