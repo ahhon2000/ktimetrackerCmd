@@ -93,6 +93,9 @@ class KTTCmd:
         elif cmd in ('hist', 'history', 'rep', 'report'):
             hi = History(self, *(args[1:]))
             print(hi)
+        elif cmd in ('csv',):
+            hi = History(self, *(args[1:]))
+            print(hi.getCSV())
         elif cmd in ('help',):
             self.runRawCmd(output=True)
         elif cmd in ('raw',):
