@@ -75,11 +75,17 @@ class KTTCmd:
 
         if cmd in ('version',):
             self.runRawCmd('version', output=True)
-        elif cmd in ('start', 'stop'):
+        elif cmd in ('start'):
             if len(args) != 2: raise Exception('wrong # of args')
             t = Task(self, args[1])
-            if cmd == 'start': t.start()
-            elif cmd == 'stop': t.stop()
+            t.start()
+        elif cmd in ('stop'):
+            if len(args) == 2:
+                t = Task(self, args[1])
+                t.stop()
+            elif len(args) == 1:
+                self.runRawCmd('stopAllTimersDBUS')
+            else: raise Exception('wrong # of args')
         elif cmd in ('id', 'taskid', 'getid', 'getId', 'getTaskId'):
             if len(args) < 2: raise Exception('wrong # of args')
             for t in self.getTasks(args[1:]):
