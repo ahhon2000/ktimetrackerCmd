@@ -105,14 +105,13 @@ class History:
 
     def _correctForActiveTasks(self):
         ktt = self.ktt
-        today_t = Date('today').toNiceTextDateOnly()
         ddic = self.dailyDict
 
         ts = ktt.getTasks()
-        vsdic = ktt.getCalFileVevents() if ts else None
+        vsdic = ktt.calFile.getVevents() if ts else None
         corrHrs = 0
-        today_t = Date('today').toNiceTextDateOnly()
-        dn = Date("now")
+        dn, today, yesterday = map(Date, ('now', 'today', 'yesterday'))
+        today_t = today.toNiceTextDateOnly()
         for t in ts:
             if not t.isActive(): continue
 
@@ -120,6 +119,8 @@ class History:
             v0 = None
             for v in reversed(vs):
                 if not v.dStart: continue
+                if v.dStart < yesterday: continue
+
                 if not v.dEnd:
                     v0 = v
                     break
