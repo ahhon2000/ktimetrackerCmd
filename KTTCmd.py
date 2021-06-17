@@ -4,13 +4,18 @@ import re
 import argparse
 import time
 import subprocess
+from collections import defaultdict
+from pathlib import Path
 
 from EasyPipe import Pipe
 from Task import Task
 from History import History
+from Vevent import Vevent
 
 SERVICE_NAME = "org.kde.ktimetracker"
 QDBUS_CMD_BASE = f"qdbus {SERVICE_NAME} /KTimeTracker".split()
+HOME = Path(os.environ.get('HOME'))
+CALENDAR_FILE = HOME / '.local/share/ktimetracker/ktimetracker.ics'
 
 class KTTCmd:
     def __init__(self, cmdopts):
@@ -122,3 +127,37 @@ class KTTCmd:
                 print(p.stdout.rstrip())
 
         return p
+
+    def getCalFileLines(self):
+        if not CALENDAR_FILE.exists(): raise Exception(f"could not find the calendar file: {CALENDAR_FILE}")
+
+        txt = CALENDAR_FILE.read_text()
+        ls = txt.split("\n")
+        if ls and not ls[-1]: ls.pop()
+
+        return ls
+
+    def getCalFileVevents(self):
+        ls = self.getCalFileLines()
+
+        vs = []
+
+        vevBuf, inEvent = None, False
+        for l in ls:
+            if re.search(r'^\s*BEGIN:VEVENT\s*$', l, flags=re.IGNORECASE):
+                vevBuf, inEvent = [], True
+            elif re.search(r'^\s*END:VEVENT\s*$', l, flags=re.IGNORECASE):
+                vs.append(Vevent(vevBuf))
+                vevBuf, inEvent = None, False
+            elif inEvent:
+                vevBuf.append(l)
+
+        vsdic = defaultdict(list)
+        for v in vs:
+            if not v.relatedTo: continue
+            vsdic[v.relatedTo].append(v)
+
+        for vs in vsdic.values():
+            vs.sort(key = lambda v: v.dStart.toText() if v.dStart else '')
+                
+        return vsdic

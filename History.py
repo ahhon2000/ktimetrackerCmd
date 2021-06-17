@@ -53,6 +53,8 @@ class History:
         self._processCSVLines()
 
     def _processCSVLines(self):
+        # Convert CSV lines to an internal representation, self.dailyDict
+
         ls = self.CSVLines
 
         fss = [l.split(",") for l in ls]
@@ -67,8 +69,11 @@ class History:
                 for j, d in enumerate(ds, start=1)
         }
 
-        self.lines = ls = []
+        self._correctForActiveTasks()
 
+        # Fill out self.lines
+
+        self.lines = ls = []
         firstColWidth = 14
         colWidth = max(8, max((len(t) for t in ts), default=8))
 
@@ -97,6 +102,31 @@ class History:
                 )
             ]
         ))
+
+    def _correctForActiveTasks(self):
+        ktt = self.ktt
+        today_t = Date('today').toNiceTextDateOnly()
+        ddic = self.dailyDict
+
+        ts = ktt.getTasks()
+        vsdic = ktt.getCalFileVevents() if ts else None
+        corrHrs = 0
+        today_t = Date('today').toNiceTextDateOnly()
+        dn = Date("now")
+        for t in ts:
+            if not t.isActive(): continue
+
+            vs = vsdic.get(t.ide)
+            v0 = None
+            for v in reversed(vs):
+                if not v.dStart: continue
+                if not v.dEnd:
+                    v0 = v
+                    break
+            if not v0: continue
+
+            corrHrs = v0.dStart.hoursEarlier(dn)
+            ddic[today_t][t.name] += corrHrs
 
 
     def __str__(self):
