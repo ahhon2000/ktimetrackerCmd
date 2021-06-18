@@ -17,6 +17,24 @@ QDBUS_CMD_BASE = f"qdbus {SERVICE_NAME} /KTimeTracker".split()
 HOME = Path(os.environ.get('HOME'))
 CALENDAR_FILE = HOME / '.local/share/ktimetracker/ktimetracker.ics'
 
+CMDS_TO_FUNCS = {
+    ('version',): '_execVersion',
+    ('start',): '_execStart',
+    ('stop',): '_execStop',
+    ('id', 'taskid', 'getid', 'getId', 'getTaskId'): '_execGetId',
+    ('tasks', 'status', 'st'): '_execStatus',
+    ('hist', 'history', 'rep', 'report'): '_execHistory',
+    ('csv', 'CSV',): '_execCSV',
+    ('help',): '_execHelp',
+    ('raw',): '_execRaw',
+    ('quit', 'exit',): '_execQuit',
+}
+CMDS_TO_FUNCS = {
+    c: f
+        for cs, f in CMDS_TO_FUNCS.items()
+            for c in cs
+}
+
 class KTTCmd:
     def __init__(self, cmdopts):
         self.calFile = CalFile(self, CALENDAR_FILE)
@@ -71,6 +89,54 @@ class KTTCmd:
 
         return ts
 
+    def _execVersion(self, args):
+        self.runRawCmd('version', output=True)
+
+    def _execStart(self, args):
+        if len(args) != 2: raise Exception('wrong # of args')
+        t = Task(self, args[1])
+        t.start()
+        self._execStatus(())
+
+    def _execStop(self, args):
+        if len(args) == 2:
+            t = Task(self, args[1])
+            t.stop()
+        elif len(args) == 1:
+            self.runRawCmd('stopAllTimersDBUS')
+        else: raise Exception('wrong # of args')
+
+        self._execStatus(())
+
+    def _execGetId(self, args):
+        if len(args) < 2: raise Exception('wrong # of args')
+        for t in self.getTasks(args[1:]):
+            print(f'{t.name}: {t.ide}')
+
+    def _execStatus(self, args):
+        for t in self.getTasks(args[1:]):
+            hrsFld = f'{"*" if t.isActive() else ""}{t.getTotalHours():.2f}'.rjust(6)
+            print(f"""
+{t.ide}  {t.name:10s}  {hrsFld} h
+"""[1:-1])
+
+    def _execHistory(self, args):
+        hi = History(self, *(args[1:]))
+        print(hi)
+
+    def _execCSV(self, args):
+        hi = History(self, *(args[1:]))
+        print(hi.getCSV())
+
+    def _execHelp(self, args):
+        self.runRawCmd(output=True)
+
+    def _execRaw(self, args):
+        self.runRawCmd(*(args[1:]), output=True)
+
+    def _execQuit(self, args):
+        self.runRawCmd('quit', output=True)
+
     def execCmd(self, args=[]):
         if not args:
             args = self.commandLineOpts.arguments
@@ -79,42 +145,9 @@ class KTTCmd:
 
         cmd = args[0]
 
-        if cmd in ('version',):
-            self.runRawCmd('version', output=True)
-        elif cmd in ('start'):
-            if len(args) != 2: raise Exception('wrong # of args')
-            t = Task(self, args[1])
-            t.start()
-        elif cmd in ('stop'):
-            if len(args) == 2:
-                t = Task(self, args[1])
-                t.stop()
-            elif len(args) == 1:
-                self.runRawCmd('stopAllTimersDBUS')
-            else: raise Exception('wrong # of args')
-        elif cmd in ('id', 'taskid', 'getid', 'getId', 'getTaskId'):
-            if len(args) < 2: raise Exception('wrong # of args')
-            for t in self.getTasks(args[1:]):
-                print(f'{t.name}: {t.ide}')
-        elif cmd in ('tasks', 'status', 'st'):
-            for t in self.getTasks(args[1:]):
-                hrsFld = f'{"*" if t.isActive() else ""}{t.getTotalHours():.2f}'.rjust(6)
-                print(f"""
-{t.ide}  {t.name:10s}  {hrsFld} h
-"""[1:-1])
-        elif cmd in ('hist', 'history', 'rep', 'report'):
-            hi = History(self, *(args[1:]))
-            print(hi)
-        elif cmd in ('csv',):
-            hi = History(self, *(args[1:]))
-            print(hi.getCSV())
-        elif cmd in ('help',):
-            self.runRawCmd(output=True)
-        elif cmd in ('raw',):
-            self.runRawCmd(*(args[1:]), output=True)
-        elif cmd in ('quit', 'exit'):
-            self.runRawCmd('quit', output=True)
-        else: raise Exception('unsupported command')
+        if cmd not in CMDS_TO_FUNCS: raise Exception('unsupported command')
+        f = getattr(self, CMDS_TO_FUNCS.get(cmd))
+        f(args)
 
 
     def runRawCmd(self, *parg, stopOnError=True, output=False):
