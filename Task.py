@@ -1,3 +1,5 @@
+from Date import Date
+from History import History
 
 class Task:
     def __init__(self, ktt, nameOrId):

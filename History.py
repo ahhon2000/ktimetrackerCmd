@@ -107,6 +107,8 @@ class History:
         ktt = self.ktt
         ddic = self.dailyDict
 
+        self.activeTasksHours = athrs = {}
+
         ts = ktt.getTasks()
         vsdic = ktt.calFile.getVevents() if ts else None
         corrHrs = 0
@@ -129,9 +131,34 @@ class History:
             corrHrs = v0.dStart.hoursEarlier(dn)
             ddic[today_t][t.name] += corrHrs
 
+            athrs[t.name] = corrHrs
 
     def __str__(self):
         return "\n".join(self.lines)
 
     def getCSV(self):
         return "\n".join(self.CSVLines)
+
+    def getHours(self, d, taskName=None):
+        dtxt = d.toNiceTextDateOnly()
+        taskHrs = self.dailyDict.get(dtxt, {})
+        if taskName:
+            return taskHrs.get(taskName, 0)
+        return taskHrs
+
+    def getHoursForPeriod(self, period, taskName):
+        ktt = self.ktt
+
+        if period in ('current', 'current_session'):
+            h = self.activeTasksHours.get(taskName, 0)
+        elif period == 'today':
+            h = self.getHours(Date('today'), taskName)
+        elif period == 'this_week':
+            today, monday = map(Date, ('today', 'monday'))
+            h = sum(
+                self.getHours(monday.plusDays(i), taskName)
+                    for i in range(round(monday.daysEarlier(today)) + 1)
+            )
+        else: raise Exception(f'unsupported period: {period}')
+
+        return h

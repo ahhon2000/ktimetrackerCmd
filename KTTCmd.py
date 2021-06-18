@@ -11,6 +11,7 @@ from EasyPipe import Pipe
 from Task import Task
 from History import History
 from CalFile import CalFile
+from Date import Date
 
 SERVICE_NAME = "org.kde.ktimetracker"
 QDBUS_CMD_BASE = f"qdbus {SERVICE_NAME} /KTimeTracker".split()
@@ -114,8 +115,18 @@ class KTTCmd:
             print(f'{t.name}: {t.ide}')
 
     def _execStatus(self, args):
+        hi = History(self, Date('monday'))
         for t in self.getTasks(args[1:]):
-            hrsFld = f'{"*" if t.isActive() else ""}{t.getTotalHours():.2f}'.rjust(6)
+            isActive = t.isActive()
+            hCur, hDay, hWk = map(
+                lambda period: hi.getHoursForPeriod(period, t.name),
+                ('current', 'today', 'this_week'),
+            )
+
+            hrsFld = f"""
+{"*" if isActive else ""}{hCur:.2f}/{hDay:.2f}/{hWk:.2f}
+"""[1:-1].rjust(18)
+
             print(f"""
 {t.ide}  {t.name:10s}  {hrsFld} h
 """[1:-1])
