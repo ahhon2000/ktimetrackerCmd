@@ -87,6 +87,7 @@ class KTTCmd:
         for n in names:
             t = Task(self, n)
             ts.append(t)
+        ts.sort(key=lambda t: t.name)
 
         return ts
 
